@@ -32,8 +32,8 @@ Download and install the latest release after installing the Dwarf Fortress and
 DFHack packages:
 
 ```sh
-curl -LO 'https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging/releases/latest/download/dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
-sudo apt install './dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
+curl -LO 'https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging/releases/latest/download/dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.2_all.deb'
+sudo apt install './dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.2_all.deb'
 ```
 
 Run DFHack with the backported script overlay:
@@ -68,7 +68,7 @@ Build locally instead:
 git clone --recursive https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging.git
 cd dfhack-scripts-backport-0.47.05r8-linux-packaging
 make build
-sudo apt install '../dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
+sudo apt install '../dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.2_all.deb'
 ```
 
 Build the package:
@@ -81,7 +81,7 @@ make build
 The default output path is:
 
 ```text
-../dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb
+../dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.2_all.deb
 ```
 
 Inspect the pinned upstream source:
@@ -93,8 +93,8 @@ make source-info
 Package metadata:
 
 - Package: `dfhack-scripts-backport-0.47.05+r8`
-- Version: `0.47.05+r8+backport10b1c6b-1df04705.1`
-- Depends: `dfhack-0.47.05+r8 (= 0.47.05+r8-1df04705.1)`
+- Version: `0.47.05+r8+backport10b1c6b-1df04705.2`
+- Depends: `dfhack-0.47.05+r8 (= 0.47.05+r8-1df04705.2)`
 - Enhances: `dfhack-0.47.05+r8`
 
 Removal restores the original `dfhack-0.47.05+r8` wrapper diversion.
