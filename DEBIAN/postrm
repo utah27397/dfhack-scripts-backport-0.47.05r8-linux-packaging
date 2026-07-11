@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+PACKAGE="dfhack-scripts-backport-0.47.05+r8"
+TARGET="/usr/bin/dfhack"
+DIVERTED="/usr/bin/dfhack.dfhack-0.47.05+r8"
+
+case "$1" in
+    remove|abort-install|disappear)
+        owner="$(dpkg-divert --listpackage "$TARGET")"
+        if [ "$owner" = "$PACKAGE" ]; then
+            dpkg-divert --package "$PACKAGE" --remove --rename --divert "$DIVERTED" "$TARGET"
+        fi
+        ;;
+esac
+
+exit 0

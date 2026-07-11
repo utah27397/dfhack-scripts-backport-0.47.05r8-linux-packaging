@@ -1,0 +1,288 @@
+#!/bin/sh
+set -eu
+
+APPNAME="dfhack-0.47.05r8"
+LEGACY_APPNAMES="dfhack-47.05r8 dfhack-local"
+DFAPPNAME="dwarf-fortress-0.47.05"
+LEGACY_DFAPPNAMES="dwarf-fortress-47.05 dwarf-fortress-local"
+GAME_SYSTEMDIR="/opt/dwarf-fortress-0.47.05"
+DFHACK_SYSTEMDIR="/opt/dfhack-0.47.05r8"
+BACKPORT_SYSTEMDIR="/opt/dfhack-scripts-backport-0.47.05r8"
+DATAROOT="${XDG_DATA_HOME:-$HOME/.local/share}"
+USERDATADIR="$DATAROOT/$APPNAME"
+DFUSERDATADIR="$DATAROOT/$DFAPPNAME"
+
+if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+    echo "XDG_RUNTIME_DIR is not set. Run this from a normal user login session, not sudo." >&2
+    exit 1
+fi
+
+RUNTIMEDIR="$XDG_RUNTIME_DIR/$APPNAME"
+LAUNCHER="dfhack"
+DFHACK_MUTABLE_TOPLEVEL="blueprints dfhack-config exports stocksettings"
+MUTABLE_TOPLEVEL="data raw $DFHACK_MUTABLE_TOPLEVEL"
+REDIRECTED_DIRS="blueprints dfhack-config dfhack-config/init dfhack-config/stockpiles exports stocksettings"
+OVERLAY_TOPLEVEL="libs"
+EXPORT_FILE_LINKS="graphics_procedural_creatures.txt itemdump.txt tiledump.txt terrain.xml benchmark.txt"
+NCURSES_LIB="/usr/lib/x86_64-linux-gnu/libncurses.so.6"
+NCURSESW_LIB="/usr/lib/x86_64-linux-gnu/libncursesw.so.6"
+LIBGCC_S_LIB="/usr/lib/x86_64-linux-gnu/libgcc_s.so.1"
+LIBSTDCXX_LIB="/usr/lib/x86_64-linux-gnu/libstdc++.so.6"
+
+if [ ! -d "$GAME_SYSTEMDIR" ]; then
+    echo "Missing Dwarf Fortress installation directory: $GAME_SYSTEMDIR" >&2
+    exit 1
+fi
+
+if [ ! -d "$DFHACK_SYSTEMDIR" ]; then
+    echo "Missing DFHack installation directory: $DFHACK_SYSTEMDIR" >&2
+    exit 1
+fi
+
+if [ ! -d "$BACKPORT_SYSTEMDIR" ]; then
+    echo "Missing DFHack scripts backport installation directory: $BACKPORT_SYSTEMDIR" >&2
+    exit 1
+fi
+
+if [ ! -x "$DFHACK_SYSTEMDIR/$LAUNCHER" ]; then
+    echo "Missing or non-executable launcher: $DFHACK_SYSTEMDIR/$LAUNCHER" >&2
+    exit 1
+fi
+
+if [ ! -x "$GAME_SYSTEMDIR/libs/Dwarf_Fortress" ]; then
+    echo "Missing or non-executable Dwarf Fortress binary: $GAME_SYSTEMDIR/libs/Dwarf_Fortress" >&2
+    exit 1
+fi
+
+if [ ! -e "$NCURSES_LIB" ]; then
+    echo "Missing ncurses compatibility target: $NCURSES_LIB" >&2
+    exit 1
+fi
+
+if [ ! -e "$NCURSESW_LIB" ]; then
+    echo "Missing ncurses compatibility target: $NCURSESW_LIB" >&2
+    exit 1
+fi
+
+if [ ! -e "$LIBGCC_S_LIB" ]; then
+    echo "Missing runtime library target: $LIBGCC_S_LIB" >&2
+    exit 1
+fi
+
+if [ ! -e "$LIBSTDCXX_LIB" ]; then
+    echo "Missing runtime library target: $LIBSTDCXX_LIB" >&2
+    exit 1
+fi
+
+seed_mutable_tree() {
+    src="$1"
+    dest="$2"
+
+    if [ -d "$src" ]; then
+        mkdir -p "$dest"
+        cp -a -n "$src/." "$dest/"
+    elif [ ! -e "$dest" ]; then
+        mkdir -p "$dest"
+    fi
+}
+
+preserve_runtime_tree() {
+    src="$1"
+    dest="$2"
+
+    [ -d "$src" ] || return 0
+    [ ! -L "$src" ] || return 0
+
+    mkdir -p "$dest"
+    cp -a -n "$src/." "$dest/"
+}
+
+merge_legacy_tree() {
+    src="$1"
+    dest="$2"
+
+    [ -d "$src" ] || return 0
+    [ ! -L "$src" ] || return 0
+
+    mkdir -p "$dest"
+    cp -a -n "$src/." "$dest/"
+}
+
+link_overlay_tree() {
+    src="$1"
+    dest="$2"
+
+    [ -d "$src" ] || return 0
+
+    mkdir -p "$dest"
+
+    (cd "$src" && find . -type d | sort) |
+    while IFS= read -r rel || [ -n "$rel" ]; do
+        rel="${rel#./}"
+        [ "$rel" != "." ] || continue
+        mkdir -p "$dest/$rel"
+    done
+
+    (cd "$src" && find . ! -type d | sort) |
+    while IFS= read -r rel || [ -n "$rel" ]; do
+        rel="${rel#./}"
+        target="$dest/$rel"
+
+        mkdir -p "$dest/$(dirname "$rel")"
+
+        if [ -d "$target" ] && [ ! -L "$target" ]; then
+            echo "Runtime overlay collision for directory path: $rel" >&2
+            exit 1
+        fi
+
+        rm -f -- "$target"
+        ln -s "$src/$rel" "$target"
+    done
+}
+
+link_dfhack_top_level() {
+    base="$1"
+
+    if [ "$base" = "hack" ] && [ -d "$BACKPORT_SYSTEMDIR/$base" ]; then
+        if [ -e "$RUNTIMEDIR/$base" ] || [ -L "$RUNTIMEDIR/$base" ]; then
+            echo "Runtime overlay collision for DFHack path: $base" >&2
+            exit 1
+        fi
+
+        link_overlay_tree "$DFHACK_SYSTEMDIR/$base" "$RUNTIMEDIR/$base"
+        link_overlay_tree "$BACKPORT_SYSTEMDIR/$base" "$RUNTIMEDIR/$base"
+        return 0
+    fi
+
+    if [ -e "$RUNTIMEDIR/$base" ]; then
+        echo "Runtime overlay collision for DFHack path: $base" >&2
+        exit 1
+    fi
+
+    ln -s "$DFHACK_SYSTEMDIR/$base" "$RUNTIMEDIR/$base"
+}
+
+mkdir -p "$USERDATADIR" "$DFUSERDATADIR"
+chmod 700 "$USERDATADIR" "$DFUSERDATADIR"
+
+for name in data raw; do
+    seed_mutable_tree "$GAME_SYSTEMDIR/$name" "$DFUSERDATADIR/$name"
+    for legacy_appname in $LEGACY_DFAPPNAMES; do
+        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$DFUSERDATADIR/$name"
+    done
+done
+
+for name in $DFHACK_MUTABLE_TOPLEVEL; do
+    seed_mutable_tree "$DFHACK_SYSTEMDIR/$name" "$USERDATADIR/$name"
+    for legacy_appname in $LEGACY_APPNAMES; do
+        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$USERDATADIR/$name"
+    done
+    for legacy_appname in $LEGACY_DFAPPNAMES; do
+        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$USERDATADIR/$name"
+    done
+done
+
+for name in $REDIRECTED_DIRS; do
+    mkdir -p "$USERDATADIR/$name"
+done
+
+if [ -d "$USERDATADIR/legends" ]; then
+    cp -a -n "$USERDATADIR/legends/." "$USERDATADIR/exports/"
+fi
+
+for legacy_appname in $LEGACY_DFAPPNAMES $LEGACY_APPNAMES; do
+    if [ -d "$DATAROOT/$legacy_appname/legends" ]; then
+        cp -a -n "$DATAROOT/$legacy_appname/legends/." "$USERDATADIR/exports/"
+    fi
+done
+
+for name in $DFHACK_MUTABLE_TOPLEVEL; do
+    preserve_runtime_tree "$RUNTIMEDIR/$name" "$USERDATADIR/$name"
+done
+
+LOCAL_INIT="dfhack-local.init"
+LOCAL_INIT_SOURCE="$DFHACK_SYSTEMDIR/dfhack-config/default/init/$LOCAL_INIT"
+if [ -f "$LOCAL_INIT_SOURCE" ]; then
+    LOCAL_INIT_TARGET="$USERDATADIR/dfhack-config/init/$LOCAL_INIT"
+    mkdir -p "$USERDATADIR/dfhack-config/init"
+    if [ ! -e "$LOCAL_INIT_TARGET" ] || grep -q 'exportlegends-local' "$LOCAL_INIT_TARGET"; then
+        cp -a "$LOCAL_INIT_SOURCE" "$LOCAL_INIT_TARGET"
+    fi
+fi
+
+find "$DFUSERDATADIR" -type d -exec chmod 700 {} \;
+find "$DFUSERDATADIR" -type f -exec chmod 600 {} \;
+find "$USERDATADIR" -type d -exec chmod 700 {} \;
+find "$USERDATADIR" -type f -exec chmod 600 {} \;
+
+rm -rf "$RUNTIMEDIR" || exit 1
+mkdir -p "$RUNTIMEDIR" || exit 1
+mkdir -p "$RUNTIMEDIR/libs" || exit 1
+
+for item in "$GAME_SYSTEMDIR"/*; do
+    base="$(basename "$item")"
+
+    case " data raw " in
+        *" $base "*) continue ;;
+    esac
+
+    case " $OVERLAY_TOPLEVEL " in
+        *" $base "*) continue ;;
+    esac
+
+    ln -s "$item" "$RUNTIMEDIR/$base"
+done
+
+for item in "$DFHACK_SYSTEMDIR"/*; do
+    base="$(basename "$item")"
+
+    case " $DFHACK_MUTABLE_TOPLEVEL " in
+        *" $base "*) continue ;;
+    esac
+
+    link_dfhack_top_level "$base"
+done
+
+for item in "$GAME_SYSTEMDIR/libs"/*; do
+    base="$(basename "$item")"
+
+    case "$base" in
+        libncurses.so.5|libncursesw.so.5|libgcc_s.so.1|libstdc++.so.6) continue ;;
+    esac
+
+    case "$base" in
+        Dwarf_Fortress|libgraphics.so)
+            cp -a "$item" "$RUNTIMEDIR/libs/$base"
+            continue
+            ;;
+    esac
+
+    ln -s "$item" "$RUNTIMEDIR/libs/$base"
+done
+
+ln -s "$NCURSES_LIB" "$RUNTIMEDIR/libs/libncurses.so.5"
+ln -s "$NCURSESW_LIB" "$RUNTIMEDIR/libs/libncursesw.so.5"
+ln -s "$LIBGCC_S_LIB" "$RUNTIMEDIR/libs/libgcc_s.so.1"
+ln -s "$LIBSTDCXX_LIB" "$RUNTIMEDIR/libs/libstdc++.so.6"
+
+for name in data raw; do
+    ln -s "$DFUSERDATADIR/$name" "$RUNTIMEDIR/$name"
+done
+
+for name in $DFHACK_MUTABLE_TOPLEVEL; do
+    ln -s "$USERDATADIR/$name" "$RUNTIMEDIR/$name"
+done
+
+for name in $EXPORT_FILE_LINKS; do
+    [ ! -e "$RUNTIMEDIR/$name" ] || continue
+    [ ! -L "$RUNTIMEDIR/$name" ] || continue
+
+    ln -s "$USERDATADIR/exports/$name" "$RUNTIMEDIR/$name"
+done
+
+cd "$RUNTIMEDIR" || exit 1
+
+export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-pulse}"
+export DFHACK_NO_RENAME_LIBSTDCXX=1
+
+exec "./$LAUNCHER" "$@"

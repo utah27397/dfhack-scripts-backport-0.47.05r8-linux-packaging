@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+PACKAGE="dfhack-scripts-backport-0.47.05+r8"
+TARGET="/usr/bin/dfhack"
+DIVERTED="/usr/bin/dfhack.dfhack-0.47.05+r8"
+
+case "$1" in
+    install|upgrade)
+        owner="$(dpkg-divert --listpackage "$TARGET")"
+        case "$owner" in
+            ""|"$PACKAGE")
+                if [ "$owner" != "$PACKAGE" ]; then
+                    dpkg-divert --package "$PACKAGE" --add --rename --divert "$DIVERTED" "$TARGET"
+                fi
+                ;;
+            *)
+                echo "$TARGET is already diverted by $owner" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+esac
+
+exit 0

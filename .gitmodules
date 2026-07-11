@@ -1,0 +1,4 @@
+[submodule "upstream/scripts"]
+	path = upstream/scripts
+	url = https://github.com/utah27397/scripts.git
+	branch = scripts-backport/0.47.05-r8

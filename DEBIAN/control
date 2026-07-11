@@ -1,0 +1,11 @@
+Package: dfhack-scripts-backport-0.47.05+r8
+Version: 0.47.05+r8+backport10b1c6b-1df04705.1
+Section: games
+Priority: optional
+Architecture: all
+Maintainer: utah27397 <302294215+utah27397@users.noreply.github.com>
+Depends: dfhack-0.47.05+r8 (= 0.47.05+r8-1df04705.1)
+Enhances: dfhack-0.47.05+r8
+Description: Backported DFHack scripts for DFHack 0.47.05-r8
+ Selected backported DFHack scripts for DFHack 0.47.05-r8. Installs as an
+ immutable addon tree that the DFHack launcher overlays at runtime.
