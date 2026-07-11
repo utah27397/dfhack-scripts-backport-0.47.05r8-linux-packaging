@@ -26,6 +26,51 @@ backport package diverts `/usr/bin/dfhack` to
 `/usr/bin/dfhack.dfhack-0.47.05+r8` and installs a replacement wrapper that
 overlays this immutable addon tree into the per-user runtime tree.
 
+## Quick Start
+
+Download and install the latest release after installing the Dwarf Fortress and
+DFHack packages:
+
+```sh
+curl -LO 'https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging/releases/latest/download/dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
+sudo apt install './dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
+```
+
+Run DFHack with the backported script overlay:
+
+```sh
+dfhack
+dwarffortress
+```
+
+The base DFHack package provides the `dwarffortress` routing options. With this
+addon installed, the DFHack route includes the backported scripts:
+
+```text
+dwarffortress [--dfhack | --dfhack=true] [game args]
+dwarffortress [--no-dfhack | --vanilla | --dfhack=false] [game args]
+DFHACK=1 dwarffortress [game args]
+DFHACK=0 dwarffortress [game args]
+```
+
+Examples:
+
+```sh
+dwarffortress --dfhack
+dwarffortress --no-dfhack
+dwarffortress --vanilla
+DFHACK=0 dwarffortress
+```
+
+Build locally instead:
+
+```sh
+git clone --recursive https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging.git
+cd dfhack-scripts-backport-0.47.05r8-linux-packaging
+make build
+sudo apt install '../dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.1_all.deb'
+```
+
 Build the package:
 
 ```sh
