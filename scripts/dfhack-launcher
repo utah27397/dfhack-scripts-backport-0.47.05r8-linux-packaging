@@ -2,9 +2,7 @@
 set -eu
 
 APPNAME="dfhack-0.47.05r8"
-LEGACY_APPNAMES="dfhack-47.05r8 dfhack-local"
 DFAPPNAME="dwarf-fortress-0.47.05"
-LEGACY_DFAPPNAMES="dwarf-fortress-47.05 dwarf-fortress-local"
 GAME_SYSTEMDIR="/opt/dwarf-fortress-0.47.05"
 DFHACK_SYSTEMDIR="/opt/dfhack-0.47.05r8"
 BACKPORT_SYSTEMDIR="/opt/dfhack-scripts-backport-0.47.05r8"
@@ -97,17 +95,6 @@ preserve_runtime_tree() {
     cp -a -n "$src/." "$dest/"
 }
 
-merge_legacy_tree() {
-    src="$1"
-    dest="$2"
-
-    [ -d "$src" ] || return 0
-    [ ! -L "$src" ] || return 0
-
-    mkdir -p "$dest"
-    cp -a -n "$src/." "$dest/"
-}
-
 link_overlay_tree() {
     src="$1"
     dest="$2"
@@ -167,19 +154,10 @@ chmod 700 "$USERDATADIR" "$DFUSERDATADIR"
 
 for name in data raw; do
     seed_mutable_tree "$GAME_SYSTEMDIR/$name" "$DFUSERDATADIR/$name"
-    for legacy_appname in $LEGACY_DFAPPNAMES; do
-        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$DFUSERDATADIR/$name"
-    done
 done
 
 for name in $DFHACK_MUTABLE_TOPLEVEL; do
     seed_mutable_tree "$DFHACK_SYSTEMDIR/$name" "$USERDATADIR/$name"
-    for legacy_appname in $LEGACY_APPNAMES; do
-        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$USERDATADIR/$name"
-    done
-    for legacy_appname in $LEGACY_DFAPPNAMES; do
-        merge_legacy_tree "$DATAROOT/$legacy_appname/$name" "$USERDATADIR/$name"
-    done
 done
 
 for name in $REDIRECTED_DIRS; do
@@ -190,25 +168,9 @@ if [ -d "$USERDATADIR/legends" ]; then
     cp -a -n "$USERDATADIR/legends/." "$USERDATADIR/exports/"
 fi
 
-for legacy_appname in $LEGACY_DFAPPNAMES $LEGACY_APPNAMES; do
-    if [ -d "$DATAROOT/$legacy_appname/legends" ]; then
-        cp -a -n "$DATAROOT/$legacy_appname/legends/." "$USERDATADIR/exports/"
-    fi
-done
-
 for name in $DFHACK_MUTABLE_TOPLEVEL; do
     preserve_runtime_tree "$RUNTIMEDIR/$name" "$USERDATADIR/$name"
 done
-
-LOCAL_INIT="dfhack-local.init"
-LOCAL_INIT_SOURCE="$DFHACK_SYSTEMDIR/dfhack-config/default/init/$LOCAL_INIT"
-if [ -f "$LOCAL_INIT_SOURCE" ]; then
-    LOCAL_INIT_TARGET="$USERDATADIR/dfhack-config/init/$LOCAL_INIT"
-    mkdir -p "$USERDATADIR/dfhack-config/init"
-    if [ ! -e "$LOCAL_INIT_TARGET" ] || grep -q 'exportlegends-local' "$LOCAL_INIT_TARGET"; then
-        cp -a "$LOCAL_INIT_SOURCE" "$LOCAL_INIT_TARGET"
-    fi
-fi
 
 find "$DFUSERDATADIR" -type d -exec chmod 700 {} \;
 find "$DFUSERDATADIR" -type f -exec chmod 600 {} \;
