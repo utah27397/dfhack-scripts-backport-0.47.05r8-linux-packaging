@@ -54,6 +54,11 @@ Package metadata:
 
 Removal restores the original `dfhack-0.47.05+r8` wrapper diversion.
 
+## Latest Release
+
+Download the current Debian package from the
+[latest GitHub release](https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging/releases/latest).
+
 ## Related Repositories
 
 - [Dwarf Fortress 0.47.05 Linux x86_64 packaging](https://github.com/utah27397/dwarf-fortress-0.47.05-linux-x86_64-packaging)
