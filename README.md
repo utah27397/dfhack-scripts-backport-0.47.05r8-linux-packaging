@@ -28,8 +28,21 @@ overlays this immutable addon tree into the per-user runtime tree.
 
 ## Quick Start
 
-Download and install the latest release after installing the Dwarf Fortress and
-DFHack packages:
+Install from the shared APT repository. APT installs the exact required Dwarf
+Fortress and DFHack packages automatically:
+
+```sh
+curl -fsSL https://utah27397.github.io/dwarf-fortress-0.47.05-apt-repository/df04705-packaging.sources \
+  -o /tmp/df04705-packaging.sources
+sudo install -o root -g root -m 0644 /tmp/df04705-packaging.sources \
+  /etc/apt/sources.list.d/df04705-packaging.sources
+rm /tmp/df04705-packaging.sources
+sudo apt-get update
+sudo apt-get install dfhack-scripts-backport-0.47.05+r8
+```
+
+Alternatively, download the latest release directly after installing the Dwarf
+Fortress and DFHack packages:
 
 ```sh
 curl -LO 'https://github.com/utah27397/dfhack-scripts-backport-0.47.05r8-linux-packaging/releases/latest/download/dfhack-scripts-backport-0.47.05+r8_0.47.05+r8+backport10b1c6b-1df04705.2_all.deb'
