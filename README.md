@@ -32,8 +32,8 @@ Install from the shared APT repository. APT installs the exact required Dwarf
 Fortress and DFHack packages automatically:
 
 ```sh
-echo 'deb [arch=amd64 trusted=yes] https://utah27397.github.io/dwarf-fortress-0.47.05-apt-repository stable main' \
-  | sudo tee /etc/apt/sources.list.d/df04705-packaging.list
+curl -fsSL https://utah27397.github.io/dwarf-fortress-0.47.05-apt-repository/df04705-packaging.sources \
+  | sudo tee /etc/apt/sources.list.d/df04705-packaging.sources > /dev/null
 sudo apt update
 sudo apt install dfhack-scripts-backport-0.47.05+r8
 ```
